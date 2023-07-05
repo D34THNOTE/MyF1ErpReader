@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0-windows</TargetFramework>
-    <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <AssemblyName>Ego ERP Archiver</AssemblyName>
+    <OutputType>WinExe</OutputType>
   </PropertyGroup>
 
   <PropertyGroup>

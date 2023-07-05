@@ -1,0 +1,7 @@
+
+1. In the EgoErpArchiver project the MainViewModel is kind of where it all starts. There is a method there called "Open" which
+calls the methods named .LoadData() of classes like XmlFilesWorkspaceViewModel
+
+so I believe this is where the XML file gets initialized
+
+2. where is it actually stored in the code???? - TODO find and answer that
