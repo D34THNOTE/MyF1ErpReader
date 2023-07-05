@@ -37,7 +37,7 @@ namespace EgoErpArchiver.ViewModel
         }
         
         
-        private void Open(string fileName)
+        public void Open(string fileName)
         {
             try
             {
