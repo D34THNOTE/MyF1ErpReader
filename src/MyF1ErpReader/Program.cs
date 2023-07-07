@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 
 using EgoEngineLibrary.Archive.Erp;
 using EgoEngineLibrary.Formats.Erp;
@@ -7,6 +8,8 @@ using EgoEngineLibrary.Formats.Erp;
 using EgoEngineLibrary.Xml;
 
 using EgoErpArchiver.ViewModel;
+
+using MyF1ErpReader.Models;
 
 namespace MyF1ErpReaderTOBEDESTROYED
 {
@@ -18,36 +21,59 @@ namespace MyF1ErpReaderTOBEDESTROYED
         {
             string xmlContent = GetXMLContent();
 
-            List<double> temperatures = new List<double>();
-            List<double> grips = new List<double>();
-
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xmlContent);
+            XNamespace ns = "http://schemas.codemasters.com/compound_editor"; // necessary for reading the XML
             
-            XmlNamespaceManager nsManager = new XmlNamespaceManager(xmlDoc.NameTable);
-            nsManager.AddNamespace("ns", "http://schemas.codemasters.com/compound_editor");
+            string compoundName = "2022_SUPF"; // the tyre we want to read content for
+            
 
-            XmlNodeList temperatureNodes = xmlDoc.SelectNodes("//ns:Temperature/ns:TemperatureGrip/ns:SplineElement", nsManager);
+            XElement root = XElement.Parse(xmlContent);
+            IEnumerable<XElement> temperatureNodes = root.Descendants(ns + "Compound")
+                .Where(compound => (string)compound.Attribute("name") == compoundName)
+                .Descendants(ns + "TemperatureGrip")
+                .Descendants(ns + "SplineElement");
 
-            foreach (XmlNode node in temperatureNodes)
+            CompoundInfo processCompoundInfo = ProcessCompoundInfo(compoundName, ns, root);
+
+            // Print the extracted values
+            for (int i = 0; i < processCompoundInfo.tyreTemps.Count; i++)
             {
-                double temperature = Convert.ToDouble(node.Attributes["x"].Value);
-                double grip = Convert.ToDouble(node.Attributes["y"].Value);
-                temperatures.Add(temperature);
-                grips.Add(grip);
-            }
-
-            // printing out all temperatures
-            foreach (var line in temperatures)
-            {
-                Console.WriteLine(line);
+                Console.WriteLine($"Temperature: {processCompoundInfo.tyreTemps[i]} C, Grip: {processCompoundInfo.tempsGrip[i]}%");
             }
         }
 
 
+        public static CompoundInfo ProcessCompoundInfo(string compoundName, XNamespace ns, XElement root)
+        {
+            IEnumerable<XElement> temperatureNodes = root.Descendants(ns + "Compound")
+                .Where(compound => (string)compound.Attribute("name") == compoundName)
+                .Descendants(ns + "TemperatureGripCarcas")
+                .Descendants(ns + "SplineElement");
+            
+            // Add the rest of the method
+            CompoundInfo returnInfo = new CompoundInfo();
+
+            returnInfo.compoundName = compoundName;
+            
+            // Adding data about tyres and formatting it
+            foreach (XElement node in temperatureNodes)
+            {
+                double temperature = (double)node.Attribute("x") - 273.15; // C = K - 273.15 (K - Kelvin, C - Celsius)
+                double grip = (double)node.Attribute("y") * 100; // no further formatting for now, but this represents the percentage
+                
+                returnInfo.tyreTemps.Add(temperature);
+                returnInfo.tempsGrip.Add(grip);
+            }
+
+            return returnInfo;
+        }
+        
+        
+        
         public static string GetXMLContent()
         {
             // Reading the .erp file
+            //TODO provide a console input method
+            
             MainViewModel.Open("C:\\Users\\borsu\\OneDrive\\Pulpit\\My coding stuff\\C#\\MyF1ErpReader\\f1-22-tyrecompounds.erp");
 
             // obtaining the first element, it is written in such a way that it can theoretically store multiple XML files but we only load and want the first(and only) one
