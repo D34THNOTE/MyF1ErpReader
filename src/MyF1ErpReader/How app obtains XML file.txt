@@ -2,6 +2,15 @@
 1. In the EgoErpArchiver project the MainViewModel is kind of where it all starts. There is a method there called "Open" which
 calls the methods named .LoadData() of classes like XmlFilesWorkspaceViewModel
 
-so I believe this is where the XML file gets initialized
+2. After reading it, the XML file is stored in XmlFilesWorkspace, which has an instance in MainViewModel, as the first element of a list:
+MainViewModel.XmlFilesWorkspace.XmlFiles[0]
 
-2. where is it actually stored in the code???? - TODO find and answer that
+We need to format the bytes into actual, readable data, and we have the XML content ready(as a string):
+            var readXmlFile = MainViewModel.XmlFilesWorkspace.XmlFiles[0];
+
+            ErpFragment fragment = readXmlFile.Fragment;
+
+            byte[] data = fragment.GetDataArray(decompress: true);
+            string xmlContent = Encoding.UTF8.GetString(data);
+
+            return xmlContent;

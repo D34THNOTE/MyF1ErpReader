@@ -35,9 +35,9 @@ namespace MyF1ErpReaderTOBEDESTROYED
             CompoundInfo processCompoundInfo = ProcessCompoundInfo(compoundName, ns, root);
 
             // Print the extracted values
-            for (int i = 0; i < processCompoundInfo.tyreTemps.Count; i++)
+            for (int i = 0; i < processCompoundInfo.tyreTempsCelcius_Inside.Count; i++)
             {
-                Console.WriteLine($"Temperature: {processCompoundInfo.tyreTemps[i]} C, Grip: {processCompoundInfo.tempsGrip[i]}%");
+                Console.WriteLine($"Temperature: {processCompoundInfo.tyreTempsCelcius_Inside[i]} C, Grip: {processCompoundInfo.tempsGripPercentage_Inside[i]}%");
             }
         }
 
@@ -49,7 +49,6 @@ namespace MyF1ErpReaderTOBEDESTROYED
                 .Descendants(ns + "TemperatureGripCarcas")
                 .Descendants(ns + "SplineElement");
             
-            // Add the rest of the method
             CompoundInfo returnInfo = new CompoundInfo();
 
             returnInfo.compoundName = compoundName;
@@ -60,8 +59,8 @@ namespace MyF1ErpReaderTOBEDESTROYED
                 double temperature = (double)node.Attribute("x") - 273.15; // C = K - 273.15 (K - Kelvin, C - Celsius)
                 double grip = (double)node.Attribute("y") * 100; // no further formatting for now, but this represents the percentage
                 
-                returnInfo.tyreTemps.Add(temperature);
-                returnInfo.tempsGrip.Add(grip);
+                returnInfo.tyreTempsCelcius_Inside.Add(temperature);
+                returnInfo.tempsGripPercentage_Inside.Add(grip);
             }
 
             return returnInfo;
