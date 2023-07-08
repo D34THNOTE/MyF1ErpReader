@@ -37,24 +37,53 @@ namespace MyF1ErpReaderTOBEDESTROYED
             // Print the extracted values
             for (int i = 0; i < processCompoundInfo.tyreTempsCelcius_Inside.Count; i++)
             {
-                Console.WriteLine($"Temperature: {processCompoundInfo.tyreTempsCelcius_Inside[i]} C, Grip: {processCompoundInfo.tempsGripPercentage_Inside[i]}%");
+                Console.WriteLine($"Inside Tyre Temperature: {processCompoundInfo.tyreTempsCelcius_Inside[i]:0.00} °C, " +
+                                  $"Grip: {processCompoundInfo.tempsGripPercentage_Inside[i]:0.00}%");
+                
+                if(i+1 == processCompoundInfo.tyreTempsCelcius_Inside.Count) Console.WriteLine();
+            }
+            
+            for (int i = 0; i < processCompoundInfo.tyreTempsCelcius_Outside.Count; i++)
+            {
+                Console.WriteLine($"Outside Tyre Temperature: {processCompoundInfo.tyreTempsCelcius_Outside[i]:0.00} °C, " +
+                                  $"Grip: {processCompoundInfo.tempsGripPercentage_Outside[i]:0.00}%");
+                
+                if(i+1 == processCompoundInfo.tyreTempsCelcius_Outside.Count) Console.WriteLine();
+            }
+            
+            for (int i = 0; i < processCompoundInfo.tyreWearPercentage.Count; i++)
+            {
+                Console.WriteLine($"Tyre Wear Level: {processCompoundInfo.tyreWearPercentage[i]:0.00}%, " +
+                                  $"Grip Level: {processCompoundInfo.wearGripPercentage[i]:0.00}%");
+                
+                if(i+1 == processCompoundInfo.tyreWearPercentage.Count) Console.WriteLine();
+            }
+            
+            for (int i = 0; i < processCompoundInfo.wetnessPercentage.Count; i++)
+            {
+                Console.WriteLine($"Tyre Wetness Level: {processCompoundInfo.wetnessPercentage[i]:0.00}%, " +
+                                  $"Grip Level: {processCompoundInfo.wetnessGripPercentage[i]:0.00}%");
+                
+                if(i+1 == processCompoundInfo.wetnessPercentage.Count) Console.WriteLine();
             }
         }
 
 
         public static CompoundInfo ProcessCompoundInfo(string compoundName, XNamespace ns, XElement root)
         {
-            IEnumerable<XElement> temperatureNodes = root.Descendants(ns + "Compound")
+            CompoundInfo returnInfo = new CompoundInfo();
+            
+            returnInfo.compoundName = compoundName;
+            
+            
+            
+            // Inside tyre temperature details
+            IEnumerable<XElement> tyreDetailsXML = root.Descendants(ns + "Compound")
                 .Where(compound => (string)compound.Attribute("name") == compoundName)
                 .Descendants(ns + "TemperatureGripCarcas")
                 .Descendants(ns + "SplineElement");
             
-            CompoundInfo returnInfo = new CompoundInfo();
-
-            returnInfo.compoundName = compoundName;
-            
-            // Adding data about tyres and formatting it
-            foreach (XElement node in temperatureNodes)
+            foreach (XElement node in tyreDetailsXML)
             {
                 double temperature = (double)node.Attribute("x") - 273.15; // C = K - 273.15 (K - Kelvin, C - Celsius)
                 double grip = (double)node.Attribute("y") * 100; // no further formatting for now, but this represents the percentage
@@ -62,6 +91,62 @@ namespace MyF1ErpReaderTOBEDESTROYED
                 returnInfo.tyreTempsCelcius_Inside.Add(temperature);
                 returnInfo.tempsGripPercentage_Inside.Add(grip);
             }
+            
+            
+            
+            
+            // Outside tyre temperature details
+            tyreDetailsXML = root.Descendants(ns + "Compound")
+                .Where(compound => (string)compound.Attribute("name") == compoundName)
+                .Descendants(ns + "TemperatureGrip")
+                .Descendants(ns + "SplineElement");
+            
+            foreach (XElement node in tyreDetailsXML)
+            {
+                double temperature = (double)node.Attribute("x") - 273.15; // C = K - 273.15 (K - Kelvin, C - Celsius)
+                double grip = (double)node.Attribute("y") * 100; // no further formatting for now, but this represents the percentage
+                
+                returnInfo.tyreTempsCelcius_Outside.Add(temperature);
+                returnInfo.tempsGripPercentage_Outside.Add(grip);
+            }
+            
+            
+            
+            
+            // Tyre wear details
+            tyreDetailsXML = root.Descendants(ns + "Compound")
+                .Where(compound => (string)compound.Attribute("name") == compoundName)
+                .Descendants(ns + "WearGrip")
+                .Descendants(ns + "SplineElement");
+            
+            foreach (XElement node in tyreDetailsXML)
+            {
+                double wearLevelPercentage = (double)node.Attribute("x") * 100;
+                double gripLevelPercentage = (double)node.Attribute("y") * 100;
+                
+                returnInfo.tyreWearPercentage.Add(wearLevelPercentage);
+                returnInfo.wearGripPercentage.Add(gripLevelPercentage);
+            }
+            
+            
+            
+            
+            // Tyre wetness details
+            tyreDetailsXML = root.Descendants(ns + "Compound")
+                .Where(compound => (string)compound.Attribute("name") == compoundName)
+                .Descendants(ns + "WetnessGrip")
+                .Descendants(ns + "SplineElement");
+            
+            foreach (XElement node in tyreDetailsXML)
+            {
+                double wetnessLevelPercentage = (double)node.Attribute("x") * 100;
+                double gripLevelPercentage = (double)node.Attribute("y") * 100;
+                
+                returnInfo.wetnessPercentage.Add(wetnessLevelPercentage);
+                returnInfo.wetnessGripPercentage.Add(gripLevelPercentage);
+            }
+            
+            
 
             return returnInfo;
         }
