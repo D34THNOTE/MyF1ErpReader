@@ -25,16 +25,32 @@ namespace MyF1ErpReaderTOBEDESTROYED
             
             string compoundName = "2022_SUPF"; // the tyre we want to read content for
             
-
             XElement root = XElement.Parse(xmlContent);
-            IEnumerable<XElement> temperatureNodes = root.Descendants(ns + "Compound")
-                .Where(compound => (string)compound.Attribute("name") == compoundName)
-                .Descendants(ns + "TemperatureGrip")
-                .Descendants(ns + "SplineElement");
+            
+            IEnumerable<string> tyreNames = root.Descendants(ns + "Compound")
+                .Select(compound => (string)compound.Attribute("name"));
 
-            CompoundInfo processCompoundInfo = ProcessCompoundInfo(compoundName, ns, root);
+            // List of all tyre names from .erp file
+            List<string> tyreNamesList = tyreNames.ToList();
+            // Tyres have names like USOF and USOR, where the last letter means Front or Rear. We only need one for this application, I chose to use F variant
+            tyreNamesList.RemoveAll(name => name.EndsWith("R"));
 
-            // Print the extracted values
+            List<CompoundInfo> tyresDetailsList = new List<CompoundInfo>();
+            foreach (var tyreName in tyreNamesList)
+            {
+                tyresDetailsList.Add(ProcessCompoundInfo(tyreName, ns, root));
+            }
+            
+            
+
+
+            
+            /*
+            CompoundInfo processCompoundInfo = tyresDetailsList[0];
+            
+            Console.WriteLine("Compound name: " + processCompoundInfo.compoundName + "\n");
+
+            // Printing the extracted values
             for (int i = 0; i < processCompoundInfo.tyreTempsCelcius_Inside.Count; i++)
             {
                 Console.WriteLine($"Inside Tyre Temperature: {processCompoundInfo.tyreTempsCelcius_Inside[i]:0.00} °C, " +
@@ -66,6 +82,8 @@ namespace MyF1ErpReaderTOBEDESTROYED
                 
                 if(i+1 == processCompoundInfo.wetnessPercentage.Count) Console.WriteLine();
             }
+            
+            */
         }
 
 
@@ -74,9 +92,7 @@ namespace MyF1ErpReaderTOBEDESTROYED
             CompoundInfo returnInfo = new CompoundInfo();
             
             returnInfo.compoundName = compoundName;
-            
-            
-            
+
             // Inside tyre temperature details
             IEnumerable<XElement> tyreDetailsXML = root.Descendants(ns + "Compound")
                 .Where(compound => (string)compound.Attribute("name") == compoundName)
