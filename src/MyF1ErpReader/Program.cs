@@ -11,6 +11,8 @@ using EgoErpArchiver.ViewModel;
 
 using MyF1ErpReader.Models;
 
+using OfficeOpenXml;
+
 namespace MyF1ErpReaderTOBEDESTROYED
 {
     class Program
@@ -41,7 +43,7 @@ namespace MyF1ErpReaderTOBEDESTROYED
                 tyresDetailsList.Add(ProcessCompoundInfo(tyreName, ns, root));
             }
             
-            
+            GenerateExcelOutput(tyresDetailsList);
 
 
             
@@ -166,6 +168,62 @@ namespace MyF1ErpReaderTOBEDESTROYED
 
             return returnInfo;
         }
+        
+        
+        public static void GenerateExcelOutput(List<CompoundInfo> compoundInfoList)
+        {
+            // Create a new Excel package
+            using (ExcelPackage excelPackage = new ExcelPackage())
+            {
+                // Create the worksheet
+                ExcelWorksheet worksheet = excelPackage.Workbook.Worksheets.Add("Output");
+
+                // Track the current row and column indices
+                int currentRow = 1;
+                int currentColumn = 1;
+
+                // Write the header for the temperature range
+                worksheet.Cells[currentRow, currentColumn].Value = "Temperature Range (°C)";
+                currentColumn++;
+
+                // Get the unique temperature values from the first CompoundInfo object
+                List<double> temperatureRange = compoundInfoList[0].tyreTempsCelcius_Inside;
+
+                // Write the temperature range values in the first column
+                for (int i = 0; i < temperatureRange.Count; i++)
+                {
+                    worksheet.Cells[currentRow + i, currentColumn].Value = temperatureRange[i];
+                }
+
+                // Write the compound names in the first row
+                for (int i = 0; i < compoundInfoList.Count; i++)
+                {
+                    worksheet.Cells[currentRow, currentColumn + i].Value = compoundInfoList[i].compoundName;
+                }
+
+                // Move to the next row
+                currentRow++;
+
+                // Write the grip values for each compound
+                for (int i = 0; i < compoundInfoList.Count; i++)
+                {
+                    currentColumn = 2; // Start from the second column
+
+                    // Write the grip values for tempsGripPercentage_Inside
+                    List<double> gripValues = compoundInfoList[i].tempsGripPercentage_Inside;
+                    for (int j = 0; j < gripValues.Count; j++)
+                    {
+                        worksheet.Cells[currentRow + j, currentColumn + i].Value = gripValues[j];
+                    }
+                }
+
+                // Save the Excel package to a file
+                string outputPath = "output.xlsx";
+                FileInfo outputFileInfo = new FileInfo(outputPath);
+                excelPackage.SaveAs(outputFileInfo);
+            }
+        }
+
         
         
         

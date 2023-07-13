@@ -18,4 +18,8 @@
       <ProjectReference Include="..\EgoEngineLibrary\EgoEngineLibrary.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="EPPlus" />
+    </ItemGroup>
+
 </Project>
