@@ -9,6 +9,7 @@ using EgoEngineLibrary.Xml;
 
 using EgoErpArchiver.ViewModel;
 
+using MyF1ErpReader;
 using MyF1ErpReader.Models;
 
 using OfficeOpenXml;
@@ -43,49 +44,9 @@ namespace MyF1ErpReaderTOBEDESTROYED
                 tyresDetailsList.Add(ProcessCompoundInfo(tyreName, ns, root));
             }
             
-            GenerateExcelOutput(tyresDetailsList);
-
-
+            ConvertCompoundNames(tyresDetailsList);
             
-            /*
-            CompoundInfo processCompoundInfo = tyresDetailsList[0];
-            
-            Console.WriteLine("Compound name: " + processCompoundInfo.compoundName + "\n");
-
-            // Printing the extracted values
-            for (int i = 0; i < processCompoundInfo.tyreTempsCelcius_Inside.Count; i++)
-            {
-                Console.WriteLine($"Inside Tyre Temperature: {processCompoundInfo.tyreTempsCelcius_Inside[i]:0.00} °C, " +
-                                  $"Grip: {processCompoundInfo.tempsGripPercentage_Inside[i]:0.00}%");
-                
-                if(i+1 == processCompoundInfo.tyreTempsCelcius_Inside.Count) Console.WriteLine();
-            }
-            
-            for (int i = 0; i < processCompoundInfo.tyreTempsCelcius_Outside.Count; i++)
-            {
-                Console.WriteLine($"Outside Tyre Temperature: {processCompoundInfo.tyreTempsCelcius_Outside[i]:0.00} °C, " +
-                                  $"Grip: {processCompoundInfo.tempsGripPercentage_Outside[i]:0.00}%");
-                
-                if(i+1 == processCompoundInfo.tyreTempsCelcius_Outside.Count) Console.WriteLine();
-            }
-            
-            for (int i = 0; i < processCompoundInfo.tyreWearPercentage.Count; i++)
-            {
-                Console.WriteLine($"Tyre Wear Level: {processCompoundInfo.tyreWearPercentage[i]:0.00}%, " +
-                                  $"Grip Level: {processCompoundInfo.wearGripPercentage[i]:0.00}%");
-                
-                if(i+1 == processCompoundInfo.tyreWearPercentage.Count) Console.WriteLine();
-            }
-            
-            for (int i = 0; i < processCompoundInfo.wetnessPercentage.Count; i++)
-            {
-                Console.WriteLine($"Tyre Wetness Level: {processCompoundInfo.wetnessPercentage[i]:0.00}%, " +
-                                  $"Grip Level: {processCompoundInfo.wetnessGripPercentage[i]:0.00}%");
-                
-                if(i+1 == processCompoundInfo.wetnessPercentage.Count) Console.WriteLine();
-            }
-            
-            */
+            ExcelOutput.GenerateExcelOutput(tyresDetailsList);
         }
 
 
@@ -170,59 +131,7 @@ namespace MyF1ErpReaderTOBEDESTROYED
         }
         
         
-        public static void GenerateExcelOutput(List<CompoundInfo> compoundInfoList)
-        {
-            // Create a new Excel package
-            using (ExcelPackage excelPackage = new ExcelPackage())
-            {
-                // Create the worksheet
-                ExcelWorksheet worksheet = excelPackage.Workbook.Worksheets.Add("Output");
-
-                // Track the current row and column indices
-                int currentRow = 1;
-                int currentColumn = 1;
-
-                // Write the header for the temperature range
-                worksheet.Cells[currentRow, currentColumn].Value = "Temperature Range (°C)";
-                currentColumn++;
-
-                // Get the unique temperature values from the first CompoundInfo object
-                List<double> temperatureRange = compoundInfoList[0].tyreTempsCelcius_Inside;
-
-                // Write the temperature range values in the first column
-                for (int i = 0; i < temperatureRange.Count; i++)
-                {
-                    worksheet.Cells[currentRow + i, currentColumn].Value = temperatureRange[i];
-                }
-
-                // Write the compound names in the first row
-                for (int i = 0; i < compoundInfoList.Count; i++)
-                {
-                    worksheet.Cells[currentRow, currentColumn + i].Value = compoundInfoList[i].compoundName;
-                }
-
-                // Move to the next row
-                currentRow++;
-
-                // Write the grip values for each compound
-                for (int i = 0; i < compoundInfoList.Count; i++)
-                {
-                    currentColumn = 2; // Start from the second column
-
-                    // Write the grip values for tempsGripPercentage_Inside
-                    List<double> gripValues = compoundInfoList[i].tempsGripPercentage_Inside;
-                    for (int j = 0; j < gripValues.Count; j++)
-                    {
-                        worksheet.Cells[currentRow + j, currentColumn + i].Value = gripValues[j];
-                    }
-                }
-
-                // Save the Excel package to a file
-                string outputPath = "output.xlsx";
-                FileInfo outputFileInfo = new FileInfo(outputPath);
-                excelPackage.SaveAs(outputFileInfo);
-            }
-        }
+        
 
         
         
@@ -232,7 +141,7 @@ namespace MyF1ErpReaderTOBEDESTROYED
             // Reading the .erp file
             //TODO provide a console input method
             
-            MainViewModel.Open("C:\\Users\\borsu\\OneDrive\\Pulpit\\My coding stuff\\C#\\MyF1ErpReader\\f1-22-tyrecompounds.erp");
+            MainViewModel.Open("C:\\Users\\borsu\\Desktop\\My coding stuff\\MyF1ErpReader\\src\\MyF1ErpReader\\F1Files\\tyrecompounds.erp");
 
             // obtaining the first element, it is written in such a way that it can theoretically store multiple XML files but we only load and want the first(and only) one
             var readXmlFile = MainViewModel.XmlFilesWorkspace.XmlFiles[0];
@@ -243,6 +152,42 @@ namespace MyF1ErpReaderTOBEDESTROYED
             string xmlContent = Encoding.UTF8.GetString(data);
 
             return xmlContent;
+        }
+        
+        public static void ConvertCompoundNames(List<CompoundInfo> compoundsList)
+        {
+            foreach (var compound in compoundsList)
+            {
+                string lastFourCharacters = compound.compoundName.Substring(compound.compoundName.Length - 4);
+        
+                switch (lastFourCharacters)
+                {
+                    case "USOF":
+                        compound.compoundName = "C5";
+                        break;
+                    case "SUPF":
+                        compound.compoundName = "C4";
+                        break;
+                    case "SOFF":
+                        compound.compoundName = "C3";
+                        break;
+                    case "MEDF":
+                        compound.compoundName = "C2";
+                        break;
+                    case "HARF":
+                        compound.compoundName = "C1";
+                        break;
+                    case "SHAF":
+                        compound.compoundName = "C0";
+                        break;
+                    case "INTF":
+                        compound.compoundName = "INTERS";
+                        break;
+                    case "WETF":
+                        compound.compoundName = "WETS";
+                        break;
+                }
+            }
         }
     }
 }
