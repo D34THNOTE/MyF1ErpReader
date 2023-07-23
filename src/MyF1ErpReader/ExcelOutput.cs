@@ -1,6 +1,10 @@
-﻿using MyF1ErpReader.Models;
+﻿using System.Drawing;
+
+using MyF1ErpReader.Models;
 
 using OfficeOpenXml;
+using OfficeOpenXml.ConditionalFormatting;
+using OfficeOpenXml.Style;
 
 namespace MyF1ErpReader;
 
@@ -27,14 +31,60 @@ public class ExcelOutput
                     worksheet.Cells[currentRow, currentColumn].Value = "Range(°C)";
                     worksheet.Cells[currentRow, currentColumn + 1].Value = "Grip(%)";
                     
+                    double maxValLeftCol = Double.MinValue, maxValRightCol = Double.MinValue, minValLeftCol = Double.MaxValue, minValRightCol = Double.MaxValue;
+                        
+                    int optimalRangeStartIndx = -1;
+                    int optimalRangeEndIndx = -1;
+                    
                     for (int i = 0; i < compound.tyreTempsCelcius_Inside.Count; i++)
                     {
                         worksheet.Cells[currentRow + 1 + i, currentColumn].Value = compound.tyreTempsCelcius_Inside[i];
                         worksheet.Cells[currentRow + 1 + i, currentColumn + 1].Value = compound.tempsGripPercentage_Inside[i];
+
+                        if (maxValLeftCol < compound.tyreTempsCelcius_Inside[i])
+                            maxValLeftCol = compound.tyreTempsCelcius_Inside[i];
+                        
+                        if (minValLeftCol > compound.tyreTempsCelcius_Inside[i])
+                            minValLeftCol = compound.tyreTempsCelcius_Inside[i];
+                        
+                        if (maxValRightCol < compound.tempsGripPercentage_Inside[i])
+                            maxValRightCol = compound.tempsGripPercentage_Inside[i];
+                        
+                        if (minValRightCol > compound.tempsGripPercentage_Inside[i])
+                            minValRightCol = compound.tempsGripPercentage_Inside[i];
+                        
+                        // saving indexes of both ends of optimal tyre ranges
+                        if (i != 0 &&
+                            compound.tempsGripPercentage_Inside[i].Equals(100) &&
+                            !compound.tempsGripPercentage_Inside[i - 1].Equals(100)) optimalRangeStartIndx = i;
+
+                        if (i + 1 != compound.tyreTempsCelcius_Inside.Count &&
+                            compound.tempsGripPercentage_Inside[i].Equals(100) &&
+                            !compound.tempsGripPercentage_Inside[i + 1].Equals(100)) optimalRangeEndIndx = i;
                     }
+
+                    if (optimalRangeStartIndx == -1 || optimalRangeEndIndx == -1) throw new Exception("One of the optimal indexes has an invalid value");
+
+                    double midValLeftCol = compound.tyreTempsCelcius_Inside[optimalRangeStartIndx] + 
+                                           (
+                                               (compound.tyreTempsCelcius_Inside[optimalRangeEndIndx] - 
+                                                compound.tyreTempsCelcius_Inside[optimalRangeStartIndx])/2 
+                                           );
+                    
+                    double midValRightCol = minValRightCol + ( (maxValRightCol - minValRightCol)/2 );
+
+                    ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.tyreTempsCelcius_Inside.Count,
+                        currentColumn, minValLeftCol, midValLeftCol, maxValLeftCol,
+                        Color.CornflowerBlue, Color.MediumSeaGreen, Color.LightCoral, true);
+                    
+                    ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.tyreTempsCelcius_Inside.Count,
+                        currentColumn+1, minValRightCol, midValRightCol, maxValRightCol, 
+                        Color.LightCoral, Color.Yellow, Color.MediumSeaGreen, false);
 
                     currentColumn += 3;
                 }
+
+                /*
                 
                 currentColumn = 1;
                 currentRow += 1 + sortedCompoundInfoList[0].tyreTempsCelcius_Inside.Count + 3;
@@ -100,7 +150,7 @@ public class ExcelOutput
 
                     currentColumn += 3;
                 }
-                
+                */
                 
                 SaveExcelOutput(excelPackage);
             }
@@ -200,6 +250,65 @@ public class ExcelOutput
         }
 
         return returnList;
+    }
+
+    private static void ColorScaleOneCompound(ExcelWorksheet worksheet, int startRow, int endRow, int column, double minVal, double midVal, double maxVal, 
+        Color colorLow, Color colorMid, Color colorHigh,
+        bool isLeftCol)
+    {
+        string colLetter = ColNumberToExcelLetter(column);
+        string scaleRangeToPaint = colLetter + startRow + ":" + colLetter + endRow;
+        
+        var conditionalFormatting = worksheet.ConditionalFormatting.AddThreeColorScale(worksheet.Cells[scaleRangeToPaint]);
+
+        // Set the conditional formatting properties
+        conditionalFormatting.LowValue.Type = eExcelConditionalFormattingValueObjectType.Num;
+        conditionalFormatting.LowValue.Value = minVal;
+        conditionalFormatting.LowValue.Color = colorLow;
+                
+        conditionalFormatting.MiddleValue.Type = eExcelConditionalFormattingValueObjectType.Num;
+        conditionalFormatting.MiddleValue.Value = midVal;
+        conditionalFormatting.MiddleValue.Color = colorMid;
+                
+        conditionalFormatting.HighValue.Type = eExcelConditionalFormattingValueObjectType.Num;
+        conditionalFormatting.HighValue.Value = maxVal;
+        conditionalFormatting.HighValue.Color = colorHigh;
+        
+        // Adding borders
+        ExcelRange range = worksheet.Cells[scaleRangeToPaint];
+
+        if (isLeftCol)
+        {
+            range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            range.Style.Border.Right.Style = ExcelBorderStyle.Medium;
+            range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;   
+        }
+        else
+        {
+            range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+        }
+    }
+
+    
+    private static string ColNumberToExcelLetter(int column)
+    {
+        if (column < 1)
+            throw new ArgumentException("Column number must be greater than 0.");
+
+        string excelLetter = "";
+
+        while (column > 0)
+        {
+            int remainder = (column - 1) % 26;
+            char letter = (char)('A' + remainder);
+            excelLetter = letter + excelLetter;
+            column = (column - 1) / 26;
+        }
+
+        return excelLetter;
     }
 
 }
