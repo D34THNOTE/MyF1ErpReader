@@ -79,7 +79,7 @@ public class ExcelOutput
                     
                     ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.tyreTempsCelcius_Inside.Count,
                         currentColumn+1, minValRightCol, midValRightCol, maxValRightCol, 
-                        Color.LightCoral, Color.Yellow, Color.MediumSeaGreen, false);
+                        Color.LightCoral, ColorTranslator.FromHtml("#e6dd40"), Color.MediumSeaGreen, false);
 
                     currentColumn += 3;
                 }
@@ -145,7 +145,7 @@ public class ExcelOutput
                     
                     ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.tyreTempsCelcius_Outside.Count,
                         currentColumn+1, minValRightCol, midValRightCol, maxValRightCol, 
-                        Color.LightCoral, Color.Yellow, Color.MediumSeaGreen, false);
+                        Color.LightCoral, ColorTranslator.FromHtml("#e6dd40"), Color.MediumSeaGreen, false);
 
                     currentColumn += 3;
                 }
@@ -160,6 +160,10 @@ public class ExcelOutput
                 worksheet.Cells[currentRow - 2, currentColumn].Value = 
                     "Base % grip(first row) for each tyre and its grip affected by their degradation(wear). " +
                     "Base % means the values are in relation to an \"objective\" scale, So C1 might have 90% grip while C5 has 98%";
+                
+                double maxValObjectiveGrip = Double.MinValue, minValObjectiveGrip = Double.MaxValue;
+                int numberOfNonWetsOrOthers = 0;
+                
                 foreach (CompoundInfo compound in sortedCompoundInfoList)
                 {
                     worksheet.Cells[currentRow - 1, currentColumn].Value = compound.compoundName;
@@ -176,42 +180,65 @@ public class ExcelOutput
                         
                         worksheet.Cells[currentRow + 1 + i, currentColumn + 1].Value = objectiveGrip;
 
+                        if (maxValLeftCol < compound.tyreWearPercentage[i])
+                            maxValLeftCol = compound.tyreWearPercentage[i];
+                        
+                        if (minValLeftCol > compound.tyreWearPercentage[i])
+                            minValLeftCol = compound.tyreWearPercentage[i];
+                        
                         // creating separate scales for wet and unrecognized compounds, C0, C1..C5 compounds should have a scale together since it's "objective" - in the
                         // same "solution space", on the same scale
                         if (compound.isWetOrOther)
                         {
-                            if (maxValLeftCol < compound.tyreWearPercentage[i])
-                                maxValLeftCol = compound.tyreWearPercentage[i];
-                        
-                            if (minValLeftCol > compound.tyreWearPercentage[i])
-                                minValLeftCol = compound.tyreWearPercentage[i];
-                        
                             if (maxValRightCol < objectiveGrip)
                                 maxValRightCol = objectiveGrip;
                         
                             if (minValRightCol > objectiveGrip)
                                 minValRightCol = objectiveGrip;
                         }
+                        
+                        if (!compound.isWetOrOther)
+                        {
+                            if (maxValObjectiveGrip < objectiveGrip)
+                                maxValObjectiveGrip = objectiveGrip;
+                        
+                            if (minValObjectiveGrip > objectiveGrip)
+                                minValObjectiveGrip = objectiveGrip;
+
+                            numberOfNonWetsOrOthers++;
+                        }
                     }
+                    
+                    double midValLeftCol = maxValLeftCol / 2;
+                    
+                    ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.wearGripPercentage.Count,
+                        currentColumn, minValLeftCol, midValLeftCol, maxValLeftCol,
+                        Color.MediumSeaGreen, Color.Yellow, Color.LightCoral, true);
 
                     if (compound.isWetOrOther)
                     {
-                        double midValLeftCol = maxValLeftCol / 2;
-                    
                         double midValRightCol = minValRightCol + ( (maxValRightCol - minValRightCol)/2 );
 
                         ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.wearGripPercentage.Count,
-                            currentColumn, minValLeftCol, midValLeftCol, maxValLeftCol,
-                            Color.MediumSeaGreen, Color.Yellow, Color.LightCoral, true);
-                    
-                        ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.wearGripPercentage.Count,
                             currentColumn+1, minValRightCol, midValRightCol, maxValRightCol, 
-                            Color.LightCoral, Color.Yellow, Color.MediumSeaGreen, false);
+                            Color.LightCoral, ColorTranslator.FromHtml("#e6dd40"), Color.MediumSeaGreen, false);
                     }
                     
-
                     currentColumn += 3;
                 }
+
+                currentColumn = 1;
+                double midValObjectiveGrip = minValObjectiveGrip + ( (maxValObjectiveGrip - minValObjectiveGrip)/2 );
+                for (int i = 0; i < numberOfNonWetsOrOthers; i++)
+                {
+                    ColorScaleOneCompound(worksheet, currentRow+1, currentRow + sortedCompoundInfoList[0].wearGripPercentage.Count,
+                        currentColumn+1 + (i*3), minValObjectiveGrip, midValObjectiveGrip, maxValObjectiveGrip, 
+                        Color.LightCoral, ColorTranslator.FromHtml("#e6dd40"), Color.MediumSeaGreen, false);
+                }
+                
+                
+                
+                
                 
                 /*
                 
