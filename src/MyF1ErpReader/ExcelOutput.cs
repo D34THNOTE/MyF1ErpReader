@@ -83,11 +83,11 @@ public class ExcelOutput
 
                     currentColumn += 3;
                 }
-
-                /*
                 
                 currentColumn = 1;
                 currentRow += 1 + sortedCompoundInfoList[0].tyreTempsCelcius_Inside.Count + 3;
+                
+                
                 
                 // Printing outside tyres' temperatures and grips
                 worksheet.Cells[currentRow - 2, currentColumn].Value = "Temperatures for outside tyre";
@@ -97,14 +97,60 @@ public class ExcelOutput
                     worksheet.Cells[currentRow, currentColumn].Value = "Range(°C)";
                     worksheet.Cells[currentRow, currentColumn + 1].Value = "Grip(%)";
                     
+                    double maxValLeftCol = Double.MinValue, maxValRightCol = Double.MinValue, minValLeftCol = Double.MaxValue, minValRightCol = Double.MaxValue;
+                        
+                    int optimalRangeStartIndx = -1;
+                    int optimalRangeEndIndx = -1;
+                    
                     for (int i = 0; i < compound.tyreTempsCelcius_Outside.Count; i++)
                     {
                         worksheet.Cells[currentRow + 1 + i, currentColumn].Value = compound.tyreTempsCelcius_Outside[i];
                         worksheet.Cells[currentRow + 1 + i, currentColumn + 1].Value = compound.tempsGripPercentage_Outside[i];
+                        
+                        if (maxValLeftCol < compound.tyreTempsCelcius_Outside[i])
+                            maxValLeftCol = compound.tyreTempsCelcius_Outside[i];
+                        
+                        if (minValLeftCol > compound.tyreTempsCelcius_Outside[i])
+                            minValLeftCol = compound.tyreTempsCelcius_Outside[i];
+                        
+                        if (maxValRightCol < compound.tempsGripPercentage_Outside[i])
+                            maxValRightCol = compound.tempsGripPercentage_Outside[i];
+                        
+                        if (minValRightCol > compound.tempsGripPercentage_Outside[i])
+                            minValRightCol = compound.tempsGripPercentage_Outside[i];
+                        
+                        // saving indexes of both ends of optimal tyre ranges
+                        if (i != 0 &&
+                            compound.tempsGripPercentage_Outside[i].Equals(100) &&
+                            !compound.tempsGripPercentage_Outside[i - 1].Equals(100)) optimalRangeStartIndx = i;
+
+                        if (i + 1 != compound.tyreTempsCelcius_Outside.Count &&
+                            compound.tempsGripPercentage_Outside[i].Equals(100) &&
+                            !compound.tempsGripPercentage_Outside[i + 1].Equals(100)) optimalRangeEndIndx = i;
                     }
+                    
+                    if (optimalRangeStartIndx == -1 || optimalRangeEndIndx == -1) throw new Exception("One of the optimal indexes has an invalid value");
+
+                    double midValLeftCol = compound.tyreTempsCelcius_Outside[optimalRangeStartIndx] + 
+                                           (
+                                               (compound.tyreTempsCelcius_Outside[optimalRangeEndIndx] - 
+                                                compound.tyreTempsCelcius_Outside[optimalRangeStartIndx])/2 
+                                           );
+                    
+                    double midValRightCol = minValRightCol + ( (maxValRightCol - minValRightCol)/2 );
+
+                    ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.tyreTempsCelcius_Outside.Count,
+                        currentColumn, minValLeftCol, midValLeftCol, maxValLeftCol,
+                        Color.CornflowerBlue, Color.MediumSeaGreen, Color.LightCoral, true);
+                    
+                    ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.tyreTempsCelcius_Outside.Count,
+                        currentColumn+1, minValRightCol, midValRightCol, maxValRightCol, 
+                        Color.LightCoral, Color.Yellow, Color.MediumSeaGreen, false);
 
                     currentColumn += 3;
                 }
+                
+                /*
                 
                 currentColumn = 1;
                 currentRow += 1 + sortedCompoundInfoList[0].tyreTempsCelcius_Outside.Count + 3;
