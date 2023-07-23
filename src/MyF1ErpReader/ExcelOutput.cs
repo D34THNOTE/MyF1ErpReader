@@ -150,10 +150,11 @@ public class ExcelOutput
                     currentColumn += 3;
                 }
                 
-                /*
-                
                 currentColumn = 1;
                 currentRow += 1 + sortedCompoundInfoList[0].tyreTempsCelcius_Outside.Count + 3;
+                
+                
+                
                 
                 // Base % grip(first row) and its degradation due to wear
                 worksheet.Cells[currentRow - 2, currentColumn].Value = 
@@ -165,16 +166,54 @@ public class ExcelOutput
                     worksheet.Cells[currentRow, currentColumn].Value = "Wear(%)";
                     worksheet.Cells[currentRow, currentColumn + 1].Value = "Grip(%)";
                     
+                    double maxValLeftCol = Double.MinValue, maxValRightCol = Double.MinValue, minValLeftCol = Double.MaxValue, minValRightCol = Double.MaxValue;
+                    
                     for (int i = 0; i < compound.wearGripPercentage.Count; i++)
                     {
                         worksheet.Cells[currentRow + 1 + i, currentColumn].Value = compound.tyreWearPercentage[i];
+
+                        double objectiveGrip = compound.wetnessGripPercentage[0] * (compound.wearGripPercentage[i] / 100);
                         
-                        worksheet.Cells[currentRow + 1 + i, currentColumn + 1].Value = 
-                            compound.wetnessGripPercentage[0] * (compound.wearGripPercentage[i]/100);
+                        worksheet.Cells[currentRow + 1 + i, currentColumn + 1].Value = objectiveGrip;
+
+                        // creating separate scales for wet and unrecognized compounds, C0, C1..C5 compounds should have a scale together since it's "objective" - in the
+                        // same "solution space", on the same scale
+                        if (compound.isWetOrOther)
+                        {
+                            if (maxValLeftCol < compound.tyreWearPercentage[i])
+                                maxValLeftCol = compound.tyreWearPercentage[i];
+                        
+                            if (minValLeftCol > compound.tyreWearPercentage[i])
+                                minValLeftCol = compound.tyreWearPercentage[i];
+                        
+                            if (maxValRightCol < objectiveGrip)
+                                maxValRightCol = objectiveGrip;
+                        
+                            if (minValRightCol > objectiveGrip)
+                                minValRightCol = objectiveGrip;
+                        }
                     }
+
+                    if (compound.isWetOrOther)
+                    {
+                        double midValLeftCol = maxValLeftCol / 2;
+                    
+                        double midValRightCol = minValRightCol + ( (maxValRightCol - minValRightCol)/2 );
+
+                        ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.wearGripPercentage.Count,
+                            currentColumn, minValLeftCol, midValLeftCol, maxValLeftCol,
+                            Color.MediumSeaGreen, Color.Yellow, Color.LightCoral, true);
+                    
+                        ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.wearGripPercentage.Count,
+                            currentColumn+1, minValRightCol, midValRightCol, maxValRightCol, 
+                            Color.LightCoral, Color.Yellow, Color.MediumSeaGreen, false);
+                    }
+                    
 
                     currentColumn += 3;
                 }
+                
+                /*
                 
                 currentColumn = 1;
                 currentRow += 1 + sortedCompoundInfoList[0].wearGripPercentage.Count + 3;

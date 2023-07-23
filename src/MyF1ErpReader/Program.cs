@@ -182,9 +182,14 @@ namespace MyF1ErpReaderTOBEDESTROYED
                         break;
                     case "INTF":
                         compound.compoundName = "INTERS";
+                        compound.isWetOrOther = true;
                         break;
                     case "WETF":
                         compound.compoundName = "WETS";
+                        compound.isWetOrOther = true;
+                        break;
+                    default:
+                        compound.isWetOrOther = true;
                         break;
                 }
             }

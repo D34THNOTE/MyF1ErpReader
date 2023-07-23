@@ -19,4 +19,6 @@ public class CompoundInfo
     // Formula: Base % of grip(taken from 0% attribute of WetnessGrip) * % of relative grip left for each percentage level(from wearGripPercentage)
     public List<double> wetnessPercentage { get; set; } = new List<double>();
     public List<double> wetnessGripPercentage { get; set; } = new List<double>();
+
+    public bool isWetOrOther { get; set; } = false;
 }
