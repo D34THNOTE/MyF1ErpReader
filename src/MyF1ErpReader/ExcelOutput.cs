@@ -313,26 +313,154 @@ public class ExcelOutput
                 
                 
                 
-                /*
+                
                 
                 // Base % grip(first row) and its degradation due to wear
                 worksheet.Cells[currentRow - 2, currentColumn].Value = 
                     "Tyre wear usage - where 100% means 100% of the maximum grip for each tyre respectively";
+
+                maxValObjectiveGrip = Double.MinValue;
+                minValObjectiveGrip = Double.MaxValue;
+                numberOfNonWetsOrOthers = 0;
+                
                 foreach (CompoundInfo compound in sortedCompoundInfoList)
                 {
                     worksheet.Cells[currentRow - 1, currentColumn].Value = compound.compoundName;
                     worksheet.Cells[currentRow, currentColumn].Value = "Wear(%)";
                     worksheet.Cells[currentRow, currentColumn + 1].Value = "Grip(%)";
                     
+                    double maxValLeftCol = Double.MinValue, maxValRightCol = Double.MinValue, minValLeftCol = Double.MaxValue, minValRightCol = Double.MaxValue;
+                    
                     for (int i = 0; i < compound.wearGripPercentage.Count; i++)
                     {
                         worksheet.Cells[currentRow + 1 + i, currentColumn].Value = compound.tyreWearPercentage[i];
                         worksheet.Cells[currentRow + 1 + i, currentColumn + 1].Value = compound.wearGripPercentage[i];
+                        
+                        maxValLeftCol = compound.tyreWearPercentage.Max();
+                        minValLeftCol = compound.tyreWearPercentage.Min();
+                        
+                        // creating separate scales for wet and unrecognized compounds, C0, C1..C5 compounds should have a scale together since it's "objective" - in the
+                        // same "solution space", on the same scale
+                        if (compound.isWetOrOther)
+                        {
+                            maxValRightCol = compound.wearGripPercentage.Max();
+                        
+                            
+                            minValRightCol = compound.wearGripPercentage.Min();
+                        }
+                        
+                        if (!compound.isWetOrOther)
+                        {
+                            if (maxValObjectiveGrip < compound.wearGripPercentage[i])
+                                maxValObjectiveGrip = compound.wearGripPercentage[i];
+                        
+                            if (minValObjectiveGrip > compound.wearGripPercentage[i])
+                                minValObjectiveGrip = compound.wearGripPercentage[i];
+                        }
                     }
+                    
+                    double midValLeftCol = maxValLeftCol / 2;
+                    
+                    ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.wearGripPercentage.Count,
+                        currentColumn, minValLeftCol, midValLeftCol, maxValLeftCol,
+                        Color.MediumSeaGreen, Color.Yellow, Color.LightCoral, true);
+
+                    if (compound.isWetOrOther)
+                    {
+                        double midValRightCol = minValRightCol + ( (maxValRightCol - minValRightCol)/2 );
+
+                        ColorScaleOneCompound(worksheet, currentRow+1, currentRow + compound.wearGripPercentage.Count,
+                            currentColumn+1, minValRightCol, midValRightCol, maxValRightCol, 
+                            Color.LightCoral, ColorTranslator.FromHtml("#e6dd40"), Color.MediumSeaGreen, false);
+                    }
+                    else
+                    {
+                        numberOfNonWetsOrOthers++;
+                    }
+
 
                     currentColumn += 3;
                 }
-                */
+                
+                currentColumn = 1;
+                midValObjectiveGrip = minValObjectiveGrip + ( (maxValObjectiveGrip - minValObjectiveGrip)/2 );
+                for (int i = 0; i < numberOfNonWetsOrOthers; i++)
+                {
+                    ColorScaleOneCompound(worksheet, currentRow+1, currentRow + sortedCompoundInfoList[0].wearGripPercentage.Count,
+                        currentColumn+1 + (i*3), minValObjectiveGrip, midValObjectiveGrip, maxValObjectiveGrip, 
+                        Color.LightCoral, ColorTranslator.FromHtml("#e6dd40"), Color.MediumSeaGreen, false);
+                }
+                
+                
+                currentColumn = 1;
+                currentRow += 1 + sortedCompoundInfoList[0].wearGripPercentage.Count + 3;
+                
+                
+                
+                
+                
+                // same table but with C-type tyres close together for improved readability
+                worksheet.Cells[currentRow - 2, currentColumn].Value = 
+                    "Same thing as the table above but with C-compounds grouped together for improved readability";
+
+                maxValObjectiveGripGrouped = Double.MinValue;
+                minValObjectiveGripGrouped = Double.MaxValue;
+                numberOfNonWetsOrOthersGrouped = 0;
+
+                // printing tyre wear scale
+                worksheet.Cells[currentRow - 1, currentColumn].Value = "Wear(%)";
+                maxTempWear = sortedCompoundInfoList[0].tyreWearPercentage.Max(); 
+                minTempWear = sortedCompoundInfoList[0].tyreWearPercentage.Min();
+                for (int i = 0; i < sortedCompoundInfoList[0].tyreWearPercentage.Count; i++)
+                {
+                    worksheet.Cells[currentRow + 1 + i, currentColumn].Value = sortedCompoundInfoList[0].tyreWearPercentage[i];
+                }
+
+                midTempWear = minTempWear + ((maxTempWear - minTempWear) / 2); 
+                ColorScaleOneCompound(worksheet, currentRow+1, 
+                    currentRow + sortedCompoundInfoList[0].wearGripPercentage.Count,
+                    currentColumn, minTempWear, midTempWear, maxTempWear, 
+                    Color.MediumSeaGreen, Color.Yellow, Color.LightCoral, true);
+                
+                
+                
+                foreach (CompoundInfo compound in sortedCompoundInfoList)
+                {
+                    if (compound.isWetOrOther) break;
+                    else numberOfNonWetsOrOthersGrouped++;
+                    
+                    worksheet.Cells[currentRow, currentColumn + 1].Value = compound.compoundName;
+                    worksheet.Cells[currentRow - 1, currentColumn + 1].Value = "Grip(%)";
+
+                    for (int i = 0; i < compound.wearGripPercentage.Count; i++)
+                    {
+                        worksheet.Cells[currentRow + 1 + i, currentColumn + 1].Value = compound.wearGripPercentage[i];
+
+                        if (maxValObjectiveGripGrouped < compound.wearGripPercentage[i])
+                            maxValObjectiveGripGrouped = compound.wearGripPercentage[i];
+                        
+                        if (minValObjectiveGripGrouped > compound.wearGripPercentage[i])
+                            minValObjectiveGripGrouped = compound.wearGripPercentage[i];
+                    }
+                    
+                    currentColumn += 1;
+                }
+                
+                currentColumn = 1;
+                midValObjectiveGripGrouped = minValObjectiveGripGrouped + ( (maxValObjectiveGripGrouped - minValObjectiveGripGrouped)/2 );
+                for (int i = 0; i < numberOfNonWetsOrOthers; i++)
+                {
+                    ColorScaleOneCompound(worksheet, currentRow+1, currentRow + sortedCompoundInfoList[0].wearGripPercentage.Count,
+                        currentColumn+1 + i, minValObjectiveGripGrouped, midValObjectiveGripGrouped, maxValObjectiveGripGrouped, 
+                        Color.LightCoral, ColorTranslator.FromHtml("#e6dd40"), Color.MediumSeaGreen, false);
+                }
+                
+                currentColumn = 1;
+                currentRow += 1 + sortedCompoundInfoList[0].wearGripPercentage.Count + 3;
+                
+                
+                
+                
                 
                 SaveExcelOutput(excelPackage);
             }
