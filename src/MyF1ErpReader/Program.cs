@@ -141,7 +141,7 @@ namespace MyF1ErpReaderTOBEDESTROYED
             // Reading the .erp file
             //TODO provide a console input method
             
-            MainViewModel.Open("C:\\Users\\borsu\\OneDrive\\Pulpit\\F1 games tyre stuff\\ERP files\\tyrecompoundsF123.erp");
+            MainViewModel.Open("C:\\Users\\borsu\\Desktop\\My coding stuff\\MyF1ErpReader\\src\\MyF1ErpReader\\F1Files\\f1_2023_vehicle_package\\tyrecompounds\\tyrecompounds.erp");
 
             // obtaining the first element, it is written in such a way that it can theoretically store multiple XML files but we only load and want the first(and only) one
             var readXmlFile = MainViewModel.XmlFilesWorkspace.XmlFiles[0];
