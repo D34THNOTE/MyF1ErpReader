@@ -20,6 +20,9 @@ namespace MyF1ErpReaderTOBEDESTROYED
     {
         public static MainViewModel MainViewModel = new MainViewModel();
         
+        public static string userInputErp = "";
+        public static string userInputOutputExcel = "";
+        
         static void Main(string[] args)
         {
             string xmlContent = GetXMLContent();
@@ -138,10 +141,11 @@ namespace MyF1ErpReaderTOBEDESTROYED
         
         public static string GetXMLContent()
         {
-            // Reading the .erp file
-            //TODO provide a console input method
+
+            string usrInpt = GetUserErpInput();
             
-            MainViewModel.Open("C:\\Users\\borsu\\Desktop\\My coding stuff\\MyF1ErpReader\\src\\MyF1ErpReader\\F1Files\\f1_2023_vehicle_package\\tyrecompounds\\tyrecompounds.erp");
+            
+            MainViewModel.Open(usrInpt);
 
             // obtaining the first element, it is written in such a way that it can theoretically store multiple XML files but we only load and want the first(and only) one
             var readXmlFile = MainViewModel.XmlFilesWorkspace.XmlFiles[0];
@@ -153,7 +157,7 @@ namespace MyF1ErpReaderTOBEDESTROYED
 
             return xmlContent;
         }
-        
+
         public static void ConvertCompoundNames(List<CompoundInfo> compoundsList)
         {
             foreach (var compound in compoundsList)
@@ -194,5 +198,73 @@ namespace MyF1ErpReaderTOBEDESTROYED
                 }
             }
         }
+
+        private static string GetUserErpInput()
+        {
+            Console.WriteLine("Enter the path to the .erp file: ");
+            Console.WriteLine("Example input: C:\\Users\\borsu\\OneDrive\\Desktop\\tyrecompounds.erp - notice that the file name has to be specified together with its extension!");
+            string userErpInputPath = Console.ReadLine().Trim();
+            
+            if (!userErpInputPath.ToLower().EndsWith(".erp"))
+            {
+                throw new Exception("Passed path doesn't lead to an .erp file");
+            }
+            
+            if (!string.IsNullOrEmpty(userErpInputPath))
+            {
+                if (File.Exists(userErpInputPath))
+                {
+                    userInputErp = userErpInputPath;
+                }
+                else
+                {
+                    throw new FileNotFoundException("The specified path is wrong: ", userErpInputPath);
+                }
+            }
+            else if (!File.Exists(userErpInputPath))
+            {
+                throw new FileNotFoundException("The specified path is wrong: ", userErpInputPath);
+            }
+
+            return userErpInputPath;
+        }
+        
+        private static string GetUserOutput()
+        {
+            
+            
+            //TODO fdfffffffffffffffffffffffffffffefefgfhrtgt
+            
+            
+            
+            
+            Console.WriteLine("Enter the path to the .erp file: ");
+            Console.WriteLine("Example input: C:\\Users\\borsu\\OneDrive\\Desktop\\tyrecompounds.erp - notice that the file name has to be specified together with its extension!");
+            string userErpInputPath = Console.ReadLine().Trim();
+            
+            if (!userErpInputPath.ToLower().EndsWith(".erp"))
+            {
+                throw new Exception("Passed path doesn't lead to an .erp file");
+            }
+            
+            if (!string.IsNullOrEmpty(userErpInputPath))
+            {
+                if (File.Exists(userErpInputPath))
+                {
+                    userInputErp = userErpInputPath;
+                }
+                else
+                {
+                    throw new FileNotFoundException("The specified path is wrong: ", userErpInputPath);
+                }
+            }
+            else if (!File.Exists(userErpInputPath))
+            {
+                throw new FileNotFoundException("The specified path is wrong: ", userErpInputPath);
+            }
+
+            return userErpInputPath;
+        }
+        
     }
 }
